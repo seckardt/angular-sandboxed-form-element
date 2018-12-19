@@ -1,0 +1,70 @@
+<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+
+<script src="assets/js/jquery.slim.min.js"></script>
+<script src="assets/js/popper.min.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
+
+<input id="mount-point" type="text" class="form-control">
+<div class="invalid-feedback">Please provide a valid value.</div>
+<div class="valid-feedback">Looks good!</div>
+
+<script>
+const inputEl = document.querySelector('input#mount-point');
+
+const state = {
+  isTouched: false,
+  isValid: true,
+  isValidExternal: true
+};
+
+const updateValidClass = () => {
+  const isValid = state.isValid && state.isValidExternal;
+  inputEl.classList.toggle('is-valid', state.isTouched && isValid);
+  inputEl.classList.toggle('is-invalid', state.isTouched && !isValid);
+};
+
+const updateValidState = (value) => {
+  state.isValid = typeof value === 'string' && value.trim().length > 0;
+  updateValidClass();
+};
+
+const updateAndEmitValidState = (type, value) => {
+  updateValidState(value);
+  emit({ type: type, payload: value });
+  emit({ type: 'valid', payload: state.isValid });
+};
+
+listen('attr', ({attribute, value}) => {
+  if (!value) {
+    inputEl.removeAttribute(attribute);
+  } else {
+    inputEl.setAttribute(attribute, value);
+  }
+});
+
+listen('prop', ({property, value}) => {
+  inputEl[property] = !!value;
+});
+
+listen('value', (value) => {
+  inputEl.value = value;
+});
+
+listen('validity', (value) => {
+  state.isValidExternal = value;
+});
+
+inputEl.addEventListener('input', (event) => {
+  updateAndEmitValidState('input', event.target.value);
+});
+
+inputEl.addEventListener('change', (event) => {
+  updateAndEmitValidState('change', event.target.value);
+});
+
+inputEl.addEventListener('blur', () => {
+  state.isTouched = true;
+  updateValidState(inputEl.value);
+  emit({ type: 'blur' });
+});
+</script>

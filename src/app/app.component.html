@@ -1,20 +1,56 @@
-<!--The content below is only a placeholder and can be replaced.-->
-<div style="text-align:center">
-  <h1>
-    Welcome to {{ title }}!
-  </h1>
-  <img width="300" alt="Angular Logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgMjUwIj4KICAgIDxwYXRoIGZpbGw9IiNERDAwMzEiIGQ9Ik0xMjUgMzBMMzEuOSA2My4ybDE0LjIgMTIzLjFMMTI1IDIzMGw3OC45LTQzLjcgMTQuMi0xMjMuMXoiIC8+CiAgICA8cGF0aCBmaWxsPSIjQzMwMDJGIiBkPSJNMTI1IDMwdjIyLjItLjFWMjMwbDc4LjktNDMuNyAxNC4yLTEyMy4xTDEyNSAzMHoiIC8+CiAgICA8cGF0aCAgZmlsbD0iI0ZGRkZGRiIgZD0iTTEyNSA1Mi4xTDY2LjggMTgyLjZoMjEuN2wxMS43LTI5LjJoNDkuNGwxMS43IDI5LjJIMTgzTDEyNSA1Mi4xem0xNyA4My4zaC0zNGwxNy00MC45IDE3IDQwLjl6IiAvPgogIDwvc3ZnPg==">
-</div>
-<h2>Here are some links to help you start: </h2>
-<ul>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://angular.io/tutorial">Tour of Heroes</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://angular.io/cli">CLI Documentation</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" rel="noopener" href="https://blog.angular.io/">Angular blog</a></h2>
-  </li>
-</ul>
+<form [formGroup]="form" novalidate>
+  <div class="card" style="width: 70%;">
+    <div class="card-body">
+      <h5 class="card-title">Demo Form</h5>
+      <h6 class="card-subtitle mb-2 text-muted">This form demonstrates the use of multiple sandboxed input fields inside a single form. A simple pub/sub-based communication channel between the host window and its iframed/sandboxed input fields enables us to implement a seamless form integration including validation, etc.</h6>
 
+      <div class="form-row">
+        <div class="col-md-4 mb-3">
+          <label for="firstName">First name</label>
+          <app-sandbox class="input-group" formControlName="firstName" required id="firstName" placeholder="First name"></app-sandbox>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="lastName">Last name</label>
+          <app-sandbox formControlName="lastName" required id="lastName" placeholder="Last name"></app-sandbox>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="userName">Username</label>
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="inputGroupPrepend">@</span>
+            </div>
+            <input type="text" class="form-control" formControlName="userName" id="userName" placeholder="Username" required
+              [class.is-valid]="form.controls['userName'].touched && form.controls['userName'].valid"
+              [class.is-invalid]="form.controls['userName'].touched && form.controls['userName'].invalid">
+            <div class="invalid-feedback">Please choose a username.</div>
+            <div class="valid-feedback">Looks good!</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="col-md-6 mb-3">
+          <label for="city">City</label>
+          <app-sandbox style="display: block" formControlName="city" required id="city" placeholder="City"></app-sandbox>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="state">State</label>
+          <app-sandbox formControlName="state" required id="state" placeholder="State"></app-sandbox>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="zip">Zip</label>
+          <app-sandbox formControlName="zip" required id="zip" placeholder="Zip"></app-sandbox>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-check">
+          <input class="form-check-input" formControlName="checkbox" type="checkbox" value="" id="invalidCheck" required
+            [class.is-valid]="form.controls['checkbox'].touched && form.controls['checkbox'].valid"
+            [class.is-invalid]="form.controls['checkbox'].touched && form.controls['checkbox'].invalid">
+          <label class="form-check-label" for="invalidCheck">Agree to terms and conditions</label>
+          <div class="invalid-feedback">You must agree before submitting.</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit" [disabled]="form.pristine || form.invalid">Submit form</button>
+    </div>
+  </div>
+</form>
