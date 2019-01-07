@@ -1,0 +1,49 @@
+<form [formGroup]="form" novalidate>
+  <div class="form-row">
+    <div class="col-md-4 mb-3">
+      <label for="firstName">First name</label>
+      <app-sandbox class="input-group" formControlName="firstName" required id="firstName" placeholder="First name"></app-sandbox>
+    </div>
+    <div class="col-md-4 mb-3">
+      <label for="lastName">Last name</label>
+      <app-sandbox formControlName="lastName" required id="lastName" placeholder="Last name"></app-sandbox>
+    </div>
+    <div class="col-md-4 mb-3">
+      <label for="userName">Username</label>
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text" id="inputGroupPrepend">@</span>
+        </div>
+        <input type="text" class="form-control" formControlName="userName" id="userName" placeholder="Username" required
+          [class.is-valid]="form.controls['userName'].touched && form.controls['userName'].valid"
+          [class.is-invalid]="form.controls['userName'].touched && form.controls['userName'].invalid">
+        <div class="invalid-feedback">Please choose a username.</div>
+        <div class="valid-feedback">Looks good!</div>
+      </div>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="col-md-6 mb-3">
+      <label for="city">City</label>
+      <app-sandbox style="display: block" formControlName="city" required id="city" placeholder="City"></app-sandbox>
+    </div>
+    <div class="col-md-3 mb-3">
+      <label for="state">State</label>
+      <app-sandbox type="select" formControlName="state" required id="state" placeholder="State"></app-sandbox>
+    </div>
+    <div class="col-md-3 mb-3">
+      <label for="zip">Zip</label>
+      <app-sandbox formControlName="zip" required id="zip" placeholder="Zip"></app-sandbox>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="form-check">
+      <input class="form-check-input" formControlName="checkbox" type="checkbox" value="" id="invalidCheck" required
+        [class.is-valid]="form.controls['checkbox'].touched && form.controls['checkbox'].valid"
+        [class.is-invalid]="form.controls['checkbox'].touched && form.controls['checkbox'].invalid">
+      <label class="form-check-label" for="invalidCheck">Agree to terms and conditions</label>
+      <div class="invalid-feedback">You must agree before submitting.</div>
+    </div>
+  </div>
+  <button class="btn btn-primary" type="submit" [disabled]="form.pristine || form.invalid">Submit form</button>
+</form>

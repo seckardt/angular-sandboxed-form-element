@@ -21,13 +21,25 @@ import {
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import sandbox from 'component-sandbox';
 
-import * as sandboxedHtml from '!raw-loader!../../assets/html/sandboxed.html';
+import * as sandboxedHtml from '!raw-loader!../../assets/html/sandboxed-input.html';
+import * as sandboxedSelectHtml from '!raw-loader!../../assets/html/sandboxed-select.html';
 
 enum Actions {
   ATTR = 'attr',
   PROP = 'prop',
-  VALIDITY = 'validity',
+  VALID = 'valid',
   VALUE = 'value'
+}
+
+enum Events {
+  BLUR = 'blur',
+  INPUT = 'input',
+  VALID = 'valid'
+}
+
+enum Types {
+  SELECT = 'select',
+  TEXT = 'text'
 }
 
 interface Action {
@@ -36,6 +48,7 @@ interface Action {
 }
 
 interface State {
+  type: Types;
   value: any;
   isRequired: boolean;
   isDisabled: boolean;
@@ -68,6 +81,7 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
   private _handleValidatorChange: () => void | undefined;
 
   private state: State = {
+    type: Types.TEXT,
     value: null,
     isRequired: false,
     isDisabled: false,
@@ -77,6 +91,15 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
 
   @ViewChild('iframeElRef', { read: ElementRef })
   private iframeElRef: ElementRef;
+
+  @Input('type')
+  set type(value: string) {
+    if (value === Types.SELECT) {
+      this.state.type = Types.SELECT;
+    } else {
+      this.state.type = Types.TEXT;
+    }
+  }
 
   @Input('placeholder')
   set placeholder(value: string | undefined) {
@@ -95,7 +118,8 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
 
   ngOnInit(): void {
     this.ngZone.runOutsideAngular(async () => {
-      const { emit, listen } = await sandbox.init(this.iframeElRef.nativeElement, sandboxedHtml);
+      const html = this.state.type === Types.SELECT ? sandboxedSelectHtml : sandboxedHtml;
+      const { emit, listen } = await sandbox.init(this.iframeElRef.nativeElement, html);
 
       this.ngZone.run(() => {
         this.state.emit = emit;
@@ -106,12 +130,12 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
         this.emit(Actions.ATTR, 'placeholder');
         this.emit(Actions.PROP, 'isRequired', 'required');
         this.emit(Actions.PROP, 'isDisabled', 'disabled');
-        this.emit(Actions.VALIDITY, 'isValid');
+        this.emit(Actions.VALID, 'isValid');
 
         // Listen to events sent from the sandboxed input control
-        this.listen('input', (value: any) => this.handleInput(value));
-        this.listen('blur', () => this.handleBlur());
-        this.listen('valid', (value: boolean) => this.handleValid(coerceBooleanProperty(value)));
+        this.listen(Events.INPUT, (value: any) => this.handleInput(value));
+        this.listen(Events.BLUR, () => this.handleBlur());
+        this.listen(Events.VALID, (value: boolean) => this.handleValid(coerceBooleanProperty(value)));
       });
     });
   }
@@ -142,7 +166,7 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
 
   validate(c: AbstractControl): ValidationErrors | null {
     const result = this.state.isRequired ? Validators.required(c) : null;
-    this.emit(Actions.VALIDITY, 'isValid');
+    this.emit(Actions.VALID, 'isValid');
     return result || validateInternal(this.state);
   }
 

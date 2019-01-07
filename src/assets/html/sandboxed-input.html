@@ -9,7 +9,7 @@
 <div class="valid-feedback">Looks good!</div>
 
 <script>
-const inputEl = document.querySelector('input#mount-point');
+const inputEl = document.querySelector('#mount-point');
 
 const state = {
   isTouched: false,
@@ -50,7 +50,7 @@ listen('value', (value) => {
   inputEl.value = value;
 });
 
-listen('validity', (value) => {
+listen('valid', (value) => {
   state.isValidExternal = value;
 });
 

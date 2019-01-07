@@ -1,0 +1,83 @@
+<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+
+<script src="assets/js/jquery.slim.min.js"></script>
+<script src="assets/js/popper.min.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
+
+<select id="mount-point" class="custom-select">
+  <option value="">-- Select --</option>
+  <option value="AL">Alabama</option>
+  <option value="AK">Alaska</option>
+  <option value="AZ">Arizona</option>
+  <option value="AR">Arkansas</option>
+  <option value="CA">California</option>
+  <option value="CO">Colorado</option>
+  <option value="CT">Connecticut</option>
+  <option value="DE">Delaware</option>
+  <option value="FL">Florida</option>
+  <option value="GA">Georgia</option>
+</select>
+
+<div class="invalid-feedback">Please select a valid value.</div>
+<div class="valid-feedback">Looks good!</div>
+
+<script>
+  const selectEl = document.querySelector('#mount-point');
+
+  const state = {
+    isTouched: false,
+    isValid: true,
+    isValidExternal: true
+  };
+
+  const updateValidClass = () => {
+    const isValid = state.isValid && state.isValidExternal;
+    selectEl.classList.toggle('is-valid', state.isTouched && isValid);
+    selectEl.classList.toggle('is-invalid', state.isTouched && !isValid);
+  };
+
+  const updateValidState = (value) => {
+    state.isValid = typeof value === 'string' && value.trim().length > 0;
+    updateValidClass();
+  };
+
+  const updateAndEmitValidState = (type, value) => {
+    updateValidState(value);
+    emit({ type: type, payload: value });
+    emit({ type: 'valid', payload: state.isValid });
+  };
+
+  listen('attr', ({attribute, value}) => {
+    if (!value) {
+      selectEl.removeAttribute(attribute);
+    } else {
+      selectEl.setAttribute(attribute, value);
+    }
+  });
+
+  listen('prop', ({property, value}) => {
+    selectEl[property] = !!value;
+  });
+
+  listen('value', (value) => {
+    selectEl.value = value;
+  });
+
+  listen('valid', (value) => {
+    state.isValidExternal = value;
+  });
+
+  selectEl.addEventListener('input', (event) => {
+    updateAndEmitValidState('input', event.target.value);
+  });
+
+  selectEl.addEventListener('change', (event) => {
+    updateAndEmitValidState('change', event.target.value);
+  });
+
+  selectEl.addEventListener('blur', () => {
+    state.isTouched = true;
+    updateValidState(selectEl.value);
+    emit({ type: 'blur' });
+  });
+</script>
