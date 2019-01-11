@@ -1,0 +1,106 @@
+<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+
+<script src="assets/js/jquery.slim.min.js"></script>
+<script src="assets/js/popper.min.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
+
+<div class="input-group mb-3">
+  <input id="mount-point" type="text" class="form-control" disabled>
+  <div class="input-group-append">
+    <button class="btn btn-outline-secondary" type="button" tabindex="0"><span>Select</span></button>
+  </div>
+
+  <div class="invalid-feedback">Please provide a valid value.</div>
+  <div class="valid-feedback">Looks good!</div>
+</div>
+
+<script>
+const inputEl = document.querySelector('#mount-point');
+const buttonEl = document.querySelector('button');
+let popoverOpen = false;
+
+const state = {
+  isTouched: false,
+  isValid: true,
+  isValidExternal: true
+};
+
+const updateValidClass = () => {
+  const isValid = state.isValid && state.isValidExternal;
+  inputEl.classList.toggle('is-valid', state.isTouched && isValid);
+  inputEl.classList.toggle('is-invalid', state.isTouched && !isValid);
+};
+
+const updateValidState = (value) => {
+  state.isValid = typeof value === 'string' && value.trim().length > 0;
+  updateValidClass();
+
+  if (this.isValid !== this.isValidExternal) {
+    emit({ type: 'valid', payload: state.isValid });
+  }
+};
+
+listen('attr', ({attribute, value}) => {
+  if (!value) {
+    inputEl.removeAttribute(attribute);
+  } else {
+    inputEl.setAttribute(attribute, value);
+  }
+});
+
+listen('prop', ({property, value}) => {
+  if (property === 'disabled') {
+    value = true;
+  }
+  inputEl[property] = !!value;
+});
+
+listen('value', (value) => {
+  inputEl.value = value;
+  updateValidState(value);
+});
+
+listen('valid', (value) => {
+  state.isValidExternal = value;
+});
+
+listen('focus', () => {
+  buttonEl.focus();
+});
+
+listen('popover-close', () => {
+  popoverOpen = false;
+});
+
+buttonEl.addEventListener('blur', () => {
+  if (popoverOpen) {
+    return;
+  }
+
+  state.isTouched = true;
+  updateValidState(inputEl.value);
+  emit({ type: 'blur' });
+});
+
+buttonEl.addEventListener('click', () => {
+  if (popoverOpen) {
+    popoverOpen = false;
+
+    emit({
+      type: 'popover-close'
+    });
+  } else {
+    popoverOpen = true;
+
+    emit({
+      type: 'popover-open',
+      payload: {
+        type: 'date',
+        value: inputEl.value,
+        isRequired: inputEl.required,
+        placeholder: inputEl.placeholder
+      }
+    });
+  }
+});
+</script>

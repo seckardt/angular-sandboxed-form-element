@@ -3,10 +3,13 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  EventEmitter,
   forwardRef,
   Input,
   NgZone,
+  OnDestroy,
   OnInit,
+  Output,
   ViewChild
 } from '@angular/core';
 import {
@@ -19,10 +22,14 @@ import {
   Validators
 } from '@angular/forms';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
+import { DialogService } from '../services/dialog.service';
+import { Emit, JQueryRef, Listen, PopoverData } from './sandbox.types';
 import sandbox from 'component-sandbox';
 
 import * as sandboxedHtml from '!raw-loader!../../assets/html/sandboxed-input.html';
 import * as sandboxedSelectHtml from '!raw-loader!../../assets/html/sandboxed-select.html';
+import * as sandboxedDateHtml from '!raw-loader!../../assets/html/sandboxed-date.html';
+import * as sandboxedDatePopoverHtml from '!raw-loader!../../assets/html/sandboxed-date-popover.html';
 
 enum Actions {
   ATTR = 'attr',
@@ -34,17 +41,16 @@ enum Actions {
 enum Events {
   BLUR = 'blur',
   INPUT = 'input',
-  VALID = 'valid'
+  VALID = 'valid',
+  POPOVER_OPEN = 'popover-open',
+  POPOVER_CLOSE = 'popover-close'
 }
 
 enum Types {
+  DATE = 'date',
+  DATE_POPOVER = 'date-popover',
   SELECT = 'select',
   TEXT = 'text'
-}
-
-interface Action {
-  type: string;
-  payload: any;
 }
 
 interface State {
@@ -55,17 +61,31 @@ interface State {
   isValid: boolean;
   isValidInternal: boolean;
   placeholder?: string;
-  emit?: (action: Action) => void;
-  listen?: (type: string, callback: (payload: any) => void) => void;
+  emit?: Emit;
+  listen?: Listen;
 }
 
 function validateInternal(state: State): ValidationErrors | null {
   return state.isValidInternal ? null : { required: false };
 }
 
+function obtainMarkup(type: Types): string {
+  switch (type) {
+    case Types.DATE_POPOVER:
+      return sandboxedDatePopoverHtml;
+    case Types.DATE:
+      return sandboxedDateHtml;
+    case Types.SELECT:
+      return sandboxedSelectHtml;
+    default:
+      return sandboxedHtml;
+  }
+}
+
 @Component({
   selector: 'app-sandbox',
   templateUrl: './sandboxed-input.component.html',
+  styles: [':host { display: block; }'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => SandboxedInputComponent), multi: true },
@@ -73,7 +93,11 @@ function validateInternal(state: State): ValidationErrors | null {
   ],
   exportAs: 'sandboxedInput'
 })
-export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Validator {
+export class SandboxedInputComponent implements OnInit, OnDestroy, ControlValueAccessor, Validator {
+  private listenerDeregFns: (() => void)[] = [];
+
+  private popoverRef: JQueryRef | null = null;
+
   private _handleInputChange: (value: any) => void | undefined;
 
   private _handleInputTouched: () => void | undefined;
@@ -96,6 +120,10 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
   set type(value: string) {
     if (value === Types.SELECT) {
       this.state.type = Types.SELECT;
+    } else if (value === Types.DATE) {
+      this.state.type = Types.DATE;
+    } else if (value === Types.DATE_POPOVER) {
+      this.state.type = Types.DATE_POPOVER;
     } else {
       this.state.type = Types.TEXT;
     }
@@ -114,12 +142,16 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
     this.emit(Actions.PROP, 'isRequired', 'required');
   }
 
-  constructor(private cdRef: ChangeDetectorRef, private ngZone: NgZone) {}
+  @Output()
+  sandboxInit = new EventEmitter<{ emit: Emit; listen: Listen }>();
+
+  constructor(private cdRef: ChangeDetectorRef, private ngZone: NgZone, private elementRef: ElementRef, private dialogSvc: DialogService) {}
 
   ngOnInit(): void {
     this.ngZone.runOutsideAngular(async () => {
-      const html = this.state.type === Types.SELECT ? sandboxedSelectHtml : sandboxedHtml;
+      const html = obtainMarkup(this.state.type);
       const { emit, listen } = await sandbox.init(this.iframeElRef.nativeElement, html);
+      this.sandboxInit.emit({ emit, listen });
 
       this.ngZone.run(() => {
         this.state.emit = emit;
@@ -136,8 +168,17 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
         this.listen(Events.INPUT, (value: any) => this.handleInput(value));
         this.listen(Events.BLUR, () => this.handleBlur());
         this.listen(Events.VALID, (value: boolean) => this.handleValid(coerceBooleanProperty(value)));
+        this.listen(Events.POPOVER_OPEN, (payload: PopoverData) => this.handlePopoverOpen(payload));
+        this.listen(Events.POPOVER_CLOSE, () => this.destroyPopover());
       });
     });
+  }
+
+  ngOnDestroy(): void {
+    this.listenerDeregFns.forEach(deregFn => deregFn());
+    this.listenerDeregFns = [];
+
+    this.destroyPopover();
   }
 
   registerOnChange(fn: (value: any) => void): void {
@@ -189,9 +230,10 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
 
   private listen(type: string, callback: (value?: any) => void): void {
     this.ngZone.runOutsideAngular(() => {
-      this.state.listen(type, (value?: any) => {
+      const deregFn = this.state.listen(type, (value?: any) => {
         this.ngZone.run(() => callback(value));
       });
+      this.listenerDeregFns.push(deregFn);
     });
   }
 
@@ -206,5 +248,34 @@ export class SandboxedInputComponent implements OnInit, ControlValueAccessor, Va
   private handleValid(value: boolean): void {
     this.state.isValidInternal = value;
     this._handleValidatorChange && this._handleValidatorChange();
+  }
+
+  private handlePopoverOpen(payload: PopoverData): void {
+    this.destroyPopover();
+    this.popoverRef = this.dialogSvc.popover(this.elementRef, {
+      data: payload,
+      options: {
+        title: 'Select Date' // Would in reality be configurable based on `type`
+      },
+      closeCallback: () => {
+        this.destroyPopover();
+        this.state.emit({ type: 'focus' });
+      },
+      saveCallback: (value: any) => {
+        this.writeValue(value);
+        this.handleInput(value);
+        this.destroyPopover();
+        this.state.emit({ type: 'focus' });
+      }
+    });
+    this.popoverRef.popover('show');
+  }
+
+  private destroyPopover(): void {
+    if (this.popoverRef) {
+      this.popoverRef.popover('dispose');
+      this.popoverRef = null;
+      this.state.emit({ type: Events.POPOVER_CLOSE });
+    }
   }
 }

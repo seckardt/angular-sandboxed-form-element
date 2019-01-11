@@ -1,0 +1,131 @@
+<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/flatpickr.min.css">
+
+<style>
+.flatpickr-calendar {
+  border-radius: unset;
+  box-shadow: none;
+}
+</style>
+
+<script src="assets/js/jquery.slim.min.js"></script>
+<script src="assets/js/popper.min.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
+<script src="assets/js/flatpickr.min.js"></script>
+
+<div>
+  <input id="mount-point" hidden>
+</div>
+
+<div class="my-2">
+  <button type="button" class="btn btn-secondary">Close</button>
+  <button type="button" class="btn btn-primary" disabled>Save</button>
+</div>
+
+<script>
+const inputEl = document.querySelector('#mount-point');
+const saveButtonEl = document.querySelector('.btn-primary');
+const closeButtonEl = document.querySelector('.btn-secondary');
+
+const state = {
+  isTouched: false,
+  isValid: true,
+  isValidExternal: true,
+  flatpickrInstance: null
+};
+
+const updateValidClass = () => {
+  const isValid = state.isValid && state.isValidExternal;
+  inputEl.classList.toggle('is-valid', state.isTouched && isValid);
+  inputEl.classList.toggle('is-invalid', state.isTouched && !isValid);
+  saveButtonEl.disabled = !isValid;
+};
+
+const updateValidState = (value) => {
+  state.isValid = typeof value === 'string' && value.trim().length > 0;
+  updateValidClass();
+};
+
+const updateAndEmitValidState = (type, value) => {
+  updateValidState(value);
+  emit({ type: type, payload: value });
+  emit({ type: 'valid', payload: state.isValid });
+};
+
+const updateFlatpickr = () => {
+  if (state.flatpickrInstance) {
+    state.flatpickrInstance.destroy();
+    state.flatpickrInstance = null;
+  }
+
+  state.flatpickrInstance = flatpickr("#mount-point", {
+    inline: true,
+    clickOpens: false,
+    defaultDate: inputEl.value
+  });
+};
+
+listen('attr', ({attribute, value}) => {
+  if (!value) {
+    inputEl.removeAttribute(attribute);
+  } else {
+    inputEl.setAttribute(attribute, value);
+  }
+});
+
+listen('prop', ({property, value}) => {
+  inputEl[property] = !!value;
+});
+
+listen('focus', () => {
+  setTimeout(() => {
+    const flatpickrDaySelectedEl = document.querySelector('.flatpickr-calendar .flatpickr-day.selected');
+    if (flatpickrDaySelectedEl) {
+      flatpickrDaySelectedEl.tabIndex = 0;
+      flatpickrDaySelectedEl.focus();
+    } else {
+      const flatpickrDayTodayEl = document.querySelector('.flatpickr-calendar .flatpickr-day.today');
+      flatpickrDayTodayEl.tabIndex = 0;
+      flatpickrDayTodayEl.focus();
+    }
+  });
+});
+
+listen('value', (value) => {
+  inputEl.value = value;
+  updateFlatpickr();
+});
+
+listen('valid', (value) => {
+  state.isValidExternal = value;
+});
+
+inputEl.addEventListener('input', (event) => {
+  updateAndEmitValidState('input', event.target.value);
+});
+
+inputEl.addEventListener('change', (event) => {
+  updateAndEmitValidState('change', event.target.value);
+});
+
+inputEl.addEventListener('blur', () => {
+  state.isTouched = true;
+  updateValidState(inputEl.value);
+  emit({
+    type: 'blur'
+  });
+});
+
+saveButtonEl.addEventListener('click', () => {
+  emit({
+    type: 'popover-save',
+    payload: inputEl.value
+  });
+});
+
+closeButtonEl.addEventListener('click', () => {
+  emit({
+    type: 'popover-close'
+  });
+});
+</script>

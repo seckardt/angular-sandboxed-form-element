@@ -3,7 +3,8 @@ import { FormControl, FormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-form',
-  templateUrl: './form.component.html'
+  templateUrl: './form.component.html',
+  exportAs: 'appForm'
 })
 export class FormComponent {
   form = new FormGroup({
@@ -13,6 +14,7 @@ export class FormComponent {
     city: new FormControl('San Francisco'),
     state: new FormControl('CA'),
     zip: new FormControl(),
-    checkbox: new FormControl(false)
+    checkbox: new FormControl(false),
+    dob: new FormControl()
   });
 }

@@ -1,0 +1,4 @@
+<form [formGroup]="form" novalidate>
+  <app-sandbox formControlName="control" [type]="type" [required]="data.isRequired" [placeholder]="data.placeholder"
+    (sandboxInit)="handleSandboxInit($event)"></app-sandbox>
+</form>

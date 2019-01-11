@@ -1,14 +1,16 @@
 <form [formGroup]="form" novalidate>
   <div class="form-row">
-    <div class="col-md-4 mb-3">
+    <div class="col-md-6 mb-3">
       <label for="firstName">First name</label>
       <app-sandbox class="input-group" formControlName="firstName" required id="firstName" placeholder="First name"></app-sandbox>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-6 mb-3">
       <label for="lastName">Last name</label>
       <app-sandbox formControlName="lastName" required id="lastName" placeholder="Last name"></app-sandbox>
     </div>
-    <div class="col-md-4 mb-3">
+  </div>
+  <div class="form-row">
+    <div class="col-md-6 mb-3">
       <label for="userName">Username</label>
       <div class="input-group">
         <div class="input-group-prepend">
@@ -21,11 +23,15 @@
         <div class="valid-feedback">Looks good!</div>
       </div>
     </div>
+    <div class="col-md-6 mb-3">
+      <label for="dob">Date of birth</label>
+      <app-sandbox type="date" formControlName="dob" required id="dob" placeholder="Date of birth"></app-sandbox>
+    </div>
   </div>
   <div class="form-row">
     <div class="col-md-6 mb-3">
       <label for="city">City</label>
-      <app-sandbox style="display: block" formControlName="city" required id="city" placeholder="City"></app-sandbox>
+      <app-sandbox formControlName="city" required id="city" placeholder="City"></app-sandbox>
     </div>
     <div class="col-md-3 mb-3">
       <label for="state">State</label>

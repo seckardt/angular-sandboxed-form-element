@@ -35,6 +35,16 @@
                 "glob": "**/*",
                 "input": "node_modules/popper.js/dist/umd",
                 "output": "/assets/js"
+              },
+              {
+                "glob": "**/*.js",
+                "input": "node_modules/flatpickr/dist",
+                "output": "/assets/js"
+              },
+              {
+                "glob": "**/*.css",
+                "input": "node_modules/flatpickr/dist",
+                "output": "/assets/css"
               }
             ],
             "styles": [
