@@ -3,9 +3,14 @@ export interface Action {
   payload?: any;
 }
 
+export interface CallbackContext {
+  source?: any;
+  transfer?: Transferable[];
+}
+
 export type Emit = (action: Action) => void;
 
-export type Listen = (type: string, callback: (payload: any) => void) => () => void;
+export type Listen = (type: string, callback: (payload: any, context?: CallbackContext) => void) => () => void;
 
 /**
  * Popover options as defined by Twitter Bootstrap

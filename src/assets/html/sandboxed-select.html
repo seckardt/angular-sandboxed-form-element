@@ -49,6 +49,10 @@ const updateAndEmitValidState = (type, value) => {
   emit({ type: 'valid', payload: state.isValid });
 };
 
+listen('focus', () => {
+  selectEl.focus();
+});
+
 listen('attr', ({attribute, value}) => {
   if (!value) {
     selectEl.removeAttribute(attribute);

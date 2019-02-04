@@ -165,6 +165,7 @@ export class SandboxedInputComponent implements OnInit, OnDestroy, ControlValueA
         this.emit(Actions.VALID, 'isValid');
 
         // Listen to events sent from the sandboxed input control
+        this.listen('SBX:FOCUS', () => this.state.emit({ type: 'focus' })); // Delegate `focus` intent
         this.listen(Events.INPUT, (value: any) => this.handleInput(value));
         this.listen(Events.BLUR, () => this.handleBlur());
         this.listen(Events.VALID, (value: boolean) => this.handleValid(coerceBooleanProperty(value)));
@@ -177,6 +178,12 @@ export class SandboxedInputComponent implements OnInit, OnDestroy, ControlValueA
   ngOnDestroy(): void {
     this.listenerDeregFns.forEach(deregFn => deregFn());
     this.listenerDeregFns = [];
+
+    if (this.iframeElRef) {
+      // Manually call the `removeListeners` method on the exposed `iFrameResizer` object
+      const iFrameResizer = this.iframeElRef.nativeElement.iFrameResizer;
+      iFrameResizer && iFrameResizer.removeListeners();
+    }
 
     this.destroyPopover();
   }
@@ -273,7 +280,7 @@ export class SandboxedInputComponent implements OnInit, OnDestroy, ControlValueA
 
   private destroyPopover(): void {
     if (this.popoverRef) {
-      this.popoverRef.popover('dispose');
+      this.popoverRef.popover('hide');
       this.popoverRef = null;
       this.state.emit({ type: Events.POPOVER_CLOSE });
     }
