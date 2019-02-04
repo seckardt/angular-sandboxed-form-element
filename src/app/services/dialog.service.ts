@@ -31,7 +31,7 @@ export class DialogService {
 
       this.popoverCmpRef.instance.config = config;
     });
-    jqRef.on('hidden.bs.popover', () => {
+    jqRef.on('hide.bs.popover', () => {
       this.destroyPopover();
     });
     return jqRef;
@@ -42,8 +42,8 @@ export class DialogService {
       const ref = this.popoverCmpRef;
       this.popoverCmpRef = null;
 
-      this.applicationRef.detachView(ref.hostView);
       ref.destroy();
+      this.applicationRef.detachView(ref.hostView);
     }
   }
 }

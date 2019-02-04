@@ -280,8 +280,10 @@ export class SandboxedInputComponent implements OnInit, OnDestroy, ControlValueA
 
   private destroyPopover(): void {
     if (this.popoverRef) {
-      this.popoverRef.popover('hide');
+      const ref = this.popoverRef;
       this.popoverRef = null;
+      ref.popover('hide');
+      ref.popover('dispose');
       this.state.emit({ type: Events.POPOVER_CLOSE });
     }
   }
