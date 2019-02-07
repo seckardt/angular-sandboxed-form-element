@@ -165,7 +165,12 @@ export class SandboxedInputComponent implements OnInit, OnDestroy, ControlValueA
         this.emit(Actions.VALID, 'isValid');
 
         // Listen to events sent from the sandboxed input control
-        this.listen('SBX:FOCUS', () => this.state.emit({ type: 'focus' })); // Delegate `focus` intent
+        this.listen('SBX:FOCUS', ({ isDocumentElement }) => {
+          if (isDocumentElement) {
+            // Delegate `focus` intent
+            this.state.emit({ type: 'focus' });
+          }
+        });
         this.listen(Events.INPUT, (value: any) => this.handleInput(value));
         this.listen(Events.BLUR, () => this.handleBlur());
         this.listen(Events.VALID, (value: boolean) => this.handleValid(coerceBooleanProperty(value)));
