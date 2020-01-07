@@ -63,6 +63,7 @@ interface State {
   placeholder?: string;
   emit?: Emit;
   listen?: Listen;
+  onDestroy?: () => void;
 }
 
 function validateInternal(state: State): ValidationErrors | null {
@@ -143,19 +144,20 @@ export class SandboxedInputComponent implements OnInit, OnDestroy, ControlValueA
   }
 
   @Output()
-  sandboxInit = new EventEmitter<{ emit: Emit; listen: Listen }>();
+  sandboxInit = new EventEmitter<{ emit: Emit; listen: Listen, onDestroy: () => void }>();
 
   constructor(private cdRef: ChangeDetectorRef, private ngZone: NgZone, private elementRef: ElementRef, private dialogSvc: DialogService) {}
 
   ngOnInit(): void {
     this.ngZone.runOutsideAngular(async () => {
       const html = obtainMarkup(this.state.type);
-      const { emit, listen } = await sandbox.init(this.iframeElRef.nativeElement, html);
-      this.sandboxInit.emit({ emit, listen });
+      const { emit, listen, onDestroy } = await sandbox.init(this.iframeElRef.nativeElement, html);
+      this.sandboxInit.emit({ emit, listen, onDestroy });
 
       this.ngZone.run(() => {
         this.state.emit = emit;
         this.state.listen = listen;
+        this.state.onDestroy = onDestroy;
 
         // Immediately emit current state information to the sandboxed input control
         this.emit(Actions.VALUE, 'value');
@@ -181,16 +183,13 @@ export class SandboxedInputComponent implements OnInit, OnDestroy, ControlValueA
   }
 
   ngOnDestroy(): void {
+    this.state.emit({ type: 'destroy' });
+    setTimeout(() => {
+      this.state.onDestroy();
+    });
+
     this.listenerDeregFns.forEach(deregFn => deregFn());
     this.listenerDeregFns = [];
-
-    if (this.iframeElRef) {
-      // Manually call the `removeListeners` method on the exposed `iFrameResizer` object
-      const iFrameResizer = this.iframeElRef.nativeElement.iFrameResizer;
-      iFrameResizer && iFrameResizer.removeListeners();
-    }
-
-    this.destroyPopover();
   }
 
   registerOnChange(fn: (value: any) => void): void {
